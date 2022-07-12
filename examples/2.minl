@@ -1,0 +1,8 @@
+; testing nested expression
+
+(inc
+  (inc 1))
+
+(inc
+  (inc
+    (inc 1)))

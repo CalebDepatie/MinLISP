@@ -1,0 +1,6 @@
+; this is a comment
+
+; minimal ops testing
+(dec 2)
+
+(inc 1)
