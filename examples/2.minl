@@ -6,3 +6,9 @@
 (inc
   (inc
     (inc 1)))
+
+(dec
+  (inc 1))
+
+(inc
+  (dec 1))

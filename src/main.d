@@ -45,12 +45,12 @@ int main(string[] args) {
   auto tree = parse(tokens);
 
   debug {
-    writeln("Parsed AST:");
+    writeln("\nParsed AST:");
     writeln(tree);
   }
 
   debug {
-    writeln("Execution Result:");
+    writeln("\nExecution Result:");
   }
 
   foreach(node; tree) {
@@ -84,7 +84,7 @@ Expression parseExpression(ref Token[] tokens)
   in {
     assert (tokens[0].type == tokenType.lparen);
   } do {
-  import std.conv: to;
+
   // drop L paren
   tokens = tokens[1..$];
 
@@ -95,27 +95,40 @@ Expression parseExpression(ref Token[] tokens)
 
   // setup arguments
   AST[] args = [];
+
   while (tokens[0].type != tokenType.rparen) {
-
-    switch (tokens[0].type) {
-      case (tokenType.lparen): {
-        args ~= parse(tokens);
-        break;
-      }
-      case (tokenType.value): {
-        args ~= new Value(to!int(tokens[0].value));
-        break;
-      }
-      default: assert(0);
-    }
-
-    tokens = tokens[1..$];
+    args ~= parseArg(tokens);
   }
 
-  // drop r paren
+  // drop rparen
+  assert(tokens[0].type == tokenType.rparen, "Expected expression end, received " ~ tokens[0].toString());
   tokens = tokens[1..$];
 
   return new Expression(name, args);
+}
+
+AST parseArg(ref Token[] tokens)
+in {
+  assert(tokens[0].type != tokenType.rparen);
+  } do {
+  import std.conv: to;
+
+  AST arg;
+  switch (tokens[0].type) {
+    case (tokenType.lparen): {
+      arg = parseExpression(tokens);
+      break;
+    }
+    case (tokenType.value): {
+      arg = new Value(to!int(tokens[0].value));
+      // drop cur arg
+      tokens = tokens[1..$];
+      break;
+    }
+    default: assert(0);
+  }
+
+  return arg;
 }
 
 Function[string] functions;
@@ -168,7 +181,7 @@ class Expression : AST {
       assert(fnp !is null, "Function " ~ this.fnName ~ " does not exist");
 
       auto fn = functions[this.fnName];
-      assert(args.length == fn.argCount);
+      assert(args.length == fn.argCount, "Incorrect number of arguments provided to function");
 
       return fn.func(args);
     }
@@ -277,13 +290,13 @@ class Lexer {
 }
 
 enum tokenType {
+  unknown,
   lparen,
   rparen,
   lbracket,
   rbracket,
   iden,
-  value,
-  unknown
+  value
 }
 
 class Token {
