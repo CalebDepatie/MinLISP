@@ -1,0 +1,10 @@
+; Multi argument functions
+
+(add 1 2)
+
+(sub 3 4)
+
+(add
+  (inc 1)
+  (sub 3
+    (dec 6)))

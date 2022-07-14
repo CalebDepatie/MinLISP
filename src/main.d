@@ -30,8 +30,19 @@ int main(string[] args) {
     return args[0].execute() - 1;
   }
 
+  int add(AST[] args) {
+    return args[0].execute() + args[1].execute();
+  }
+
+  int sub(AST[] args) {
+    return args[0].execute() - args[1].execute();
+  }
+
   functions["inc"] = Function(1, &increment);
   functions["dec"] = Function(1, &decrement);
+
+  functions["add"] = Function(2, &add);
+  functions["sub"] = Function(2, &sub);
 
   auto lex = new Lexer(fileText);
 
