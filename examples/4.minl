@@ -1,0 +1,9 @@
+; Definitions
+
+(def val 2)
+
+(show val)
+
+;(defn multi [x y]
+;  (forn y
+;    (show x))) ; x added to itself y times

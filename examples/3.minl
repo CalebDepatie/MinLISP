@@ -8,3 +8,7 @@
   (inc 1)
   (sub 3
     (dec 6)))
+
+; slightly unexpected behaviour? results in 6 as it adds 2 3 times rather than incrementing a value 3 times
+(forn 3
+  (inc 1))

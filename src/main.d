@@ -38,11 +38,28 @@ int main(string[] args) {
     return args[0].execute() - args[1].execute();
   }
 
+  int forloop(AST[] args) {
+    int val = 0;
+
+    for (int i = 0; i < args[0].execute(); i++)
+      val += args[1].execute();
+
+    return val;
+  }
+
+  int show(AST[] args) {
+    return args[0].execute();
+  }
+
+  // basic maths
   functions["inc"] = Function(1, &increment);
   functions["dec"] = Function(1, &decrement);
-
   functions["add"] = Function(2, &add);
   functions["sub"] = Function(2, &sub);
+
+  // control flow and helpers
+  functions["forn"] = Function(2, &forloop);
+  functions["show"] = Function(1, &show);
 
   auto lex = new Lexer(fileText);
 
@@ -118,11 +135,30 @@ Expression parseExpression(ref Token[] tokens)
   return new Expression(name, args);
 }
 
+Array parseArray(ref Token[] tokens)
+in {
+  assert(tokens[0].type == tokenType.lbracket);
+} do {
+  // drop start bracket
+  tokens = tokens[1..$];
+  AST[] values = [];
+
+  while (tokens[0].type != tokenType.rbracket) {
+    values ~= parseArg(tokens);
+    tokens = tokens[1..$];
+  }
+
+  // drop rbracken
+  assert(tokens[0].type != tokenType.rbracket);
+  tokens = tokens[1..$];
+
+  return new Array(values);
+}
+
 AST parseArg(ref Token[] tokens)
 in {
   assert(tokens[0].type != tokenType.rparen);
   } do {
-  import std.conv: to;
 
   AST arg;
   switch (tokens[0].type) {
@@ -130,10 +166,15 @@ in {
       arg = parseExpression(tokens);
       break;
     }
+    case (tokenType.iden): // treat inline idens as value
     case (tokenType.value): {
-      arg = new Value(to!int(tokens[0].value));
+      arg = new Value(tokens[0].value);
       // drop cur arg
       tokens = tokens[1..$];
+      break;
+    }
+    case (tokenType.lbracket): {
+      arg = parseArray(tokens);
       break;
     }
     default: assert(0);
@@ -156,17 +197,38 @@ interface AST {
     string toString() pure;
 }
 
-class Value : AST {
+class Array : AST {
   private:
-    immutable int value;
+    AST[] values;
 
   public:
-    this(int value) @safe {
+  this(AST[] values) @safe {
+    this.values = values;
+  }
+
+  int execute() {
+    return 0; // how do you convert an array of values to an int? you can't
+  }
+
+  override string toString() pure @trusted {
+    import std.conv: to;
+
+    return to!string(this.values);
+  }
+}
+
+class Value : AST {
+  private:
+    immutable string value;
+
+  public:
+    this(string value) @safe {
       this.value = value;
     }
 
     int execute() {
-      return this.value;
+      import std.conv: to;
+      return to!int(this.value);
     }
 
     override string toString() pure @trusted {
