@@ -6,6 +6,8 @@
 (def secondVal [] 3)
 (secondVal)
 
-;(def multi [x y]
-;  (forn y
-;    (x))) ; x added to itself y times
+(def multi [x y]
+  (forn y
+    (show x))) ; x added to itself y times
+
+(multi 2 3)

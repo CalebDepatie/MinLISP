@@ -49,15 +49,41 @@ int main(string[] args) {
 
   int define(AST[] args) {
     const auto iden = cast(Iden) args[0];
-    const auto array = cast(Array) args[1];
+    auto array = cast(Array) args[1];
 
     auto newfunc = delegate(AST[] childArgs) {
+      // replace arguments
+      void replaceExpr(Expression parentExpr, string replaceName, AST replaceVal) {
+
+        for (int y = 0; y<parentExpr.args.length; y++) {
+          if (const auto exprArg = cast(Iden) parentExpr.args[y]) {
+            if (exprArg.getName() == replaceName) {
+              parentExpr.args[y] = replaceVal;
+            }
+          } else if (auto childExpr = cast(Expression) parentExpr.args[y]) {
+            replaceExpr(childExpr, replaceName, replaceVal);
+          }
+        }
+
+        return;
+      }
+
+      if (auto expr = cast(Expression) args[2]) {
+        for (int i = 0; i<array.length(); i++) {
+          const auto currentArg = cast(Iden) array[i];
+          replaceExpr(expr, currentArg.getName(), childArgs[i]);
+        }
+
+        return expr.execute();
+      }
+
+
       return args[2].execute();
     };
 
     functions[iden.getName()] = Function(array.length(), newfunc);
 
-    return 1;
+    return 0;
   }
 
   int show(AST[] args) {
@@ -159,7 +185,7 @@ in {
 
   while (tokens[0].type != tokenType.rbracket) {
     values ~= parseArg(tokens);
-    tokens = tokens[1..$];
+    //tokens = tokens[1..$];
   }
 
   // drop rbracken
@@ -233,6 +259,10 @@ class Array : AST {
     return to!int(values.length);
   }
 
+  ref AST opIndex(int i) {
+    return this.values[i];
+  }
+
   override string toString() const pure @trusted {
     import std.conv: to;
     char[] s;
@@ -240,7 +270,7 @@ class Array : AST {
     s ~= "[";
 
     for (int i = 0; i < values.length; i++)
-      s ~= " " ~ values[i].toString();
+      s ~= " " ~ this.values[i].toString();
 
     s ~= " ]";
 
@@ -283,9 +313,10 @@ class Iden : Value {
 class Expression : AST {
   private:
     immutable string fnName;
-    AST[] args;
 
   public:
+    AST[] args;
+
     this(string fnName, AST[] args) @safe {
       this.fnName = fnName;
       this.args = args;
