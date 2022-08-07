@@ -47,6 +47,19 @@ int main(string[] args) {
     return val;
   }
 
+  int define(AST[] args) {
+    const auto iden = cast(Iden) args[0];
+    const auto array = cast(Array) args[1];
+
+    auto newfunc = delegate(AST[] childArgs) {
+      return args[2].execute();
+    };
+
+    functions[iden.getName()] = Function(array.length(), newfunc);
+
+    return 1;
+  }
+
   int show(AST[] args) {
     return args[0].execute();
   }
@@ -60,6 +73,7 @@ int main(string[] args) {
   // control flow and helpers
   functions["forn"] = Function(2, &forloop);
   functions["show"] = Function(1, &show);
+  functions["def"] = Function(3, &define);
 
   auto lex = new Lexer(fileText);
 
@@ -149,7 +163,7 @@ in {
   }
 
   // drop rbracken
-  assert(tokens[0].type != tokenType.rbracket);
+  assert(tokens[0].type == tokenType.rbracket, "Ending array bracket not provided");
   tokens = tokens[1..$];
 
   return new Array(values);
@@ -166,7 +180,11 @@ in {
       arg = parseExpression(tokens);
       break;
     }
-    case (tokenType.iden): // treat inline idens as value
+    case (tokenType.iden): {
+      arg = new Iden(tokens[0].value);
+      tokens = tokens[1..$];
+      break;
+    }
     case (tokenType.value): {
       arg = new Value(tokens[0].value);
       // drop cur arg
@@ -194,7 +212,7 @@ struct Function {
 interface AST {
   public:
     int execute();
-    string toString() pure;
+    string toString() const pure;
 }
 
 class Array : AST {
@@ -210,10 +228,23 @@ class Array : AST {
     return 0; // how do you convert an array of values to an int? you can't
   }
 
-  override string toString() pure @trusted {
+  int length() const pure @trusted {
     import std.conv: to;
+    return to!int(values.length);
+  }
 
-    return to!string(this.values);
+  override string toString() const pure @trusted {
+    import std.conv: to;
+    char[] s;
+
+    s ~= "[";
+
+    for (int i = 0; i < values.length; i++)
+      s ~= " " ~ values[i].toString();
+
+    s ~= " ]";
+
+    return s;
   }
 }
 
@@ -231,10 +262,21 @@ class Value : AST {
       return to!int(this.value);
     }
 
-    override string toString() pure @trusted {
+    override string toString() const pure @trusted {
       import std.conv: to;
 
       return to!string(this.value);
+    }
+}
+
+class Iden : Value {
+  public:
+    this(string value) @safe {
+      super(value);
+    }
+
+    string getName() const pure @safe @nogc {
+      return this.value;
     }
 }
 
@@ -259,14 +301,14 @@ class Expression : AST {
       return fn.func(args);
     }
 
-    override string toString() pure @trusted {
+    override string toString() const pure @trusted {
       char[] s;
 
-      s ~= "(" ~ this.fnName ~ " ";
+      s ~= "( " ~ this.fnName;
       for (int i = 0; i < args.length; i++)
-        s ~= args[i].toString();
+        s ~= " " ~ args[i].toString();
 
-      s ~= ")";
+      s ~= " )";
 
       return s;
     }

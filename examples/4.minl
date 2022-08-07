@@ -1,9 +1,11 @@
 ; Definitions
 
-(def val 2)
+(def val [] 2)
+(val)
 
-(show val)
+(def secondVal [] 3)
+(secondVal)
 
-;(defn multi [x y]
+;(def multi [x y]
 ;  (forn y
-;    (show x))) ; x added to itself y times
+;    (x))) ; x added to itself y times
